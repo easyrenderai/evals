@@ -65,7 +65,7 @@ beforeAll(async () => {
       if (request.headers.get('authorization') !== 'Bearer er_test') {
         return new Response('no', { status: 401 });
       }
-      const view = () => Response.json({ id: 'r1', status, credits: status === 'ready' ? 80 : 0, renderCredits: 80 });
+      const view = () => Response.json({ id: 'r1', status, credits: status === 'ready' ? 42 : 0, renderCredits: 42 });
       if (pathname === '/api/renders' && request.method === 'GET') return Response.json({ renders: [], balance: 500 });
       if (pathname === '/api/renders' && request.method === 'POST') return view();
       if (pathname === '/api/renders/r1' && request.method === 'PATCH') return view();
@@ -108,7 +108,7 @@ describe('a full run against a stand-in API', () => {
     const baseUrl = `http://localhost:${server.port}`;
     const manifest = await runEvals({ root, client: new Client(baseUrl, 'er_test'), baseUrl, photos: [photo] });
 
-    expect(manifest.outcomes[0]).toMatchObject({ slug: 'chair', status: 'ready', creditsSpent: 80 });
+    expect(manifest.outcomes[0]).toMatchObject({ slug: 'chair', status: 'ready', creditsSpent: 42 });
     expect(manifest.outcomes[0]?.checks.views?.passed).toBe(true);
     expect(manifest.outcomes[0]?.checks.file?.passed).toBe(true);
     // The eval render is hidden from the public gallery before anything is built.

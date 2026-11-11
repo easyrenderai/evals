@@ -18,7 +18,7 @@ Every photo in the golden set is scored on five criteria:
 
 ## Running
 
-Runs are **manual only**. A run renders every photo in 3D on the easyrender account behind the API key, so it costs that account 80 credits per photo (about $0.80 each; the provider cost to easyrender is lower). Nothing runs on push or on a schedule.
+Runs are **manual only**. A run renders every photo in 3D on the easyrender account behind the API key, so it costs that account 42 credits per photo (about $0.42 each, 252 credits for the six photos; the provider cost to easyrender is lower). Nothing runs on push or on a schedule.
 
 ```bash
 bun install
