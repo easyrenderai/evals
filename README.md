@@ -18,7 +18,7 @@ Every photo in the golden set is scored on five criteria:
 
 ## Running
 
-Runs are **manual only**. A run renders every photo in 3D on the easyrender account behind the API key, so it costs that account 42 credits per photo (about $0.42 each, 252 credits for the six photos; the provider cost to easyrender is lower). Nothing runs on push or on a schedule.
+Runs are **manual only**. A run renders every photo in 3D on the easyrender account behind the API key, so it costs that account 64 credits per photo (about $0.64 each, 384 credits for the six photos; the provider cost to easyrender is lower). Nothing runs on push or on a schedule.
 
 ```bash
 bun install
@@ -28,7 +28,7 @@ EASYRENDER_API_KEY=er_... bun run run-evals --spend --only=vase  # a subset
 
 Or use the **Eval run** workflow (Actions, Run workflow), which needs a repository secret `EASYRENDER_API_KEY` and the word `spend` typed as confirmation. The run stops before building if the account cannot pay for every photo or if the API quotes a different price than the suite expects.
 
-Per photo the runner creates a render through the public REST API, hides it from the public gallery, waits for the angle sheet, pays for the 3D build, downloads the full sheet and the GLB, and runs the two automatic checks:
+Per photo the runner creates a render through the public REST API, hides it from the public gallery, waits for the angle sheet, pays for the 3D build, downloads the sheet and the GLB, and runs the two automatic checks. A paid build redraws the sheet at 2K with a second model, and falls back to the 1K draft if the redraw fails, so each outcome records the side of the sheet it was checked on:
 
 - `views`: the nine cells of the sheet are all filled and none of the eight turnaround views repeats another (the same test as the product's own guardrail, but strict: the guardrail tolerates three repeats, a score does not).
 - `file`: the GLB is a complete binary glTF 2 with at least one mesh.

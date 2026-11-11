@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import sharp from 'sharp';
 import { checkGlb, checkViews } from './checks.ts';
 import { type Client, type RenderView } from './client.ts';
 import {
@@ -75,10 +76,12 @@ async function runPhoto(
     const [sheet, model] = await Promise.all([client.sheet(renderId), client.model(renderId)]);
     await writeFile(join(dir, photo.slug, 'sheet.png'), sheet);
     await writeFile(join(dir, photo.slug, 'model.glb'), model);
+    const { width = 0, height = 0 } = await sharp(sheet).metadata();
     return outcome({
       renderId,
       status: 'ready',
       creditsSpent: built.credits,
+      sheetSide: Math.min(width, height),
       checks: { views: await checkViews(sheet), file: checkGlb(model) },
     });
   } catch (error) {

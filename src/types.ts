@@ -49,6 +49,8 @@ export type PhotoOutcome = {
   renderId: string | null;
   status: 'ready' | 'failed' | 'timeout' | 'error';
   creditsSpent: number | null;
+  /** Shorter side of the sheet that was checked, in pixels: tells a 1K draft from a 2K redraw. */
+  sheetSide?: number;
   checks: CheckResult;
   error?: string;
 };
