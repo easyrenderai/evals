@@ -46,7 +46,7 @@ bun run score <run id>          # print the result without writing anything
 bun run publish-run <run id>    # write reports/<id>.json and add the run to results/latest.json
 ```
 
-Open a pull request with the two files that changed. Publishing warns about any photo whose rights are still `unconfirmed` in `fixtures/manifest.json`.
+Open a pull request here with the two files that changed. Once it is merged, in easyrender.ai run `bun run evals:sync` and open a PR with the one file it changes (`apps/web/content/evals/latest.json`). The script validates the results first and refuses a malformed file. Publishing warns about any photo whose rights are still `unconfirmed` in `fixtures/manifest.json`.
 
 ## Results
 
