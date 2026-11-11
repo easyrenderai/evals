@@ -1,0 +1,55 @@
+name: Eval run
+
+# Manual only. A run renders every selected photo in 3D on the easyrender account behind
+# EASYRENDER_API_KEY, which spends credits (80 per photo), so it never runs on push or on a timer.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "spend" to confirm this run uses credits'
+        required: true
+      only:
+        description: 'Optional: comma-separated photo slugs from fixtures/manifest.json'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Confirm
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$CONFIRM" != "spend" ]; then
+            echo 'Type "spend" in the confirm input to run.' >&2
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Render and check
+        env:
+          EASYRENDER_API_KEY: ${{ secrets.EASYRENDER_API_KEY }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          if [ -n "$ONLY" ]; then
+            bun src/cli.ts run --spend "--only=$ONLY"
+          else
+            bun src/cli.ts run --spend
+          fi
+      # Sheets, GLBs, photos and review.json of the run. Download it, fill in review.json, then
+      # `bun run publish-run <run id>` after copying the folder to runs/.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: eval-run
+          path: runs/
+          retention-days: 30

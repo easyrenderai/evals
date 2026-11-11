@@ -1,0 +1,6 @@
+node_modules/
+# Run artefacts (sheets, GLBs, review sheets) are derived from fixture photos and stay local or in
+# the workflow artifact. Only reports/ and results/ are published.
+runs/
+fixtures/photos/
+.env*
