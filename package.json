@@ -1,0 +1,21 @@
+{
+  "name": "@easyrender/evals",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Public eval suite for easyrender.ai renders",
+  "scripts": {
+    "run-evals": "bun src/cli.ts run",
+    "score": "bun src/cli.ts score",
+    "publish-run": "bun src/cli.ts publish",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "typescript": "7.0.2"
+  }
+}

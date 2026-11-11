@@ -1,0 +1,59 @@
+{
+  "note": "Photos are not stored in this repository. Each one is fetched from its source_url and checked against sha256 before a run. rights records whether the right to use the photo has been confirmed (unconfirmed, confirmed, owned). Publishing a run lists any photo whose rights are unconfirmed; no photo is ever committed or published here, only pass counts per photo.",
+  "photos": [
+    {
+      "slug": "swivel-chair",
+      "title": "Swivel armchair",
+      "prompt": "Grey upholstered swivel armchair",
+      "materials": ["upholstery"],
+      "source_url": "https://easyrender.ai/showcase/swivel-chair.jpg",
+      "sha256": "52a2f2ef6cce760a898f5a1f2fdeb0200d1c3abda9f4430643f5a28dcaea9027",
+      "rights": "unconfirmed"
+    },
+    {
+      "slug": "coffee-table",
+      "title": "Round coffee table",
+      "prompt": "Round solid wood coffee table",
+      "materials": ["wood"],
+      "source_url": "https://easyrender.ai/showcase/coffee-table.jpg",
+      "sha256": "9e2c775734e01c57db7dd7719ec752d74c39ad96d8fb98958fd8355386913b9d",
+      "rights": "unconfirmed"
+    },
+    {
+      "slug": "vase",
+      "title": "Stoneware vase",
+      "prompt": "Matte stoneware vase",
+      "materials": ["ceramic"],
+      "source_url": "https://easyrender.ai/showcase/vase.jpg",
+      "sha256": "98c00a7d3c97f943e72abf0fb8668c0ad7696bede4096ff4b22c32b21ee62bdc",
+      "rights": "unconfirmed"
+    },
+    {
+      "slug": "armchair",
+      "title": "Bouclé lounge armchair",
+      "prompt": "Bouclé lounge armchair with a brushed steel frame",
+      "materials": ["upholstery", "metal"],
+      "source_url": "https://easyrender.ai/showcase/armchair.jpg",
+      "sha256": "9c9a2c437803a85dc5f0d7a6b882d39ba2baf301e5a5af519e572651594f8bcb",
+      "rights": "unconfirmed"
+    },
+    {
+      "slug": "clay-vase",
+      "title": "Clay vase",
+      "prompt": "Aged clay vase",
+      "materials": ["ceramic"],
+      "source_url": "https://easyrender.ai/showcase/clay-vase.jpg",
+      "sha256": "05cfb0f52b799d1d32eaf3d67410c9b8144047d0b14df25c0de4be538e633b42",
+      "rights": "unconfirmed"
+    },
+    {
+      "slug": "bedside-table",
+      "title": "Bedside table",
+      "prompt": "Solid wood bedside table with a drawer",
+      "materials": ["wood"],
+      "source_url": "https://easyrender.ai/showcase/bedside-table.jpg",
+      "sha256": "194c06fe78ea6b56dda62c9847d4c9fca0769a2d1f861a83ce7fb676377d1432",
+      "rights": "unconfirmed"
+    }
+  ]
+}
