@@ -1,7 +1,7 @@
 name: Eval run
 
 # Manual only. A run renders every selected photo in 3D on the easyrender account behind
-# EASYRENDER_API_KEY, which spends credits (80 per photo), so it never runs on push or on a timer.
+# EASYRENDER_API_KEY, which spends credits (42 per photo), so it never runs on push or on a timer.
 on:
   workflow_dispatch:
     inputs:
