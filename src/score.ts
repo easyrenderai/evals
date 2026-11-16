@@ -16,6 +16,8 @@ type ReviewedCriterion = 'shape' | 'material' | 'finish';
  * on each reviewed criterion; a missing one is an error, never a pass.
  */
 export function score(manifest: RunManifest, review: Review): Omit<EvalRun, 'reportUrl'> {
+  if (manifest.tier === 'preview')
+    throw new Error('A preview run built nothing, so it has no score to publish.');
   const criteria = Object.fromEntries(
     CRITERIA.map((c) => [c, { passed: 0, total: 0 } satisfies Score]),
   ) as Record<Criterion, Score>;

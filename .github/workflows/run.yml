@@ -1,13 +1,25 @@
 name: Eval run
 
-# Manual only. A run renders every selected photo in 3D on the easyrender account behind
-# EASYRENDER_API_KEY, which spends credits (64 per photo), so it never runs on push or on a timer.
+# Real renders against the live product, in two tiers.
+#   preview: the free draft sheet and the views check. No build, no credits.
+#   full:    the paid 3D build and the file check. 64 credits per photo on the account behind
+#            EASYRENDER_API_KEY (about $0.19 of provider cost each).
+# They run once a week (Monday), and by hand with workflow_dispatch. Nothing runs on push, and
+# nothing runs when the harness, the skills or a model changes: that would spend credits on every
+# change. After such a change, dispatch the full tier yourself.
 on:
+  schedule:
+    - cron: '23 5 * * 1'
   workflow_dispatch:
     inputs:
+      tier:
+        description: 'preview (free sheet and views check) or full (builds, spends credits)'
+        type: choice
+        options: [preview, full]
+        default: preview
       confirm:
-        description: 'Type "spend" to confirm this run uses credits'
-        required: true
+        description: 'Full tier only: type "spend" to confirm this run uses credits'
+        required: false
       only:
         description: 'Optional: comma-separated photo slugs from fixtures/manifest.json'
         required: false
@@ -15,17 +27,60 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: eval-run
+  cancel-in-progress: false
+
 jobs:
-  run:
+  preview:
+    if: github.event_name == 'schedule' || inputs.tier == 'preview'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Preview tier
+        env:
+          EASYRENDER_API_KEY: ${{ secrets.EASYRENDER_API_KEY }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          if [ -z "$EASYRENDER_API_KEY" ]; then
+            echo 'Repository secret EASYRENDER_API_KEY is not set.' >&2
+            exit 1
+          fi
+          if [ -n "$ONLY" ]; then
+            bun src/cli.ts run --preview "--only=$ONLY"
+          else
+            bun src/cli.ts run --preview
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: eval-preview
+          path: runs/
+          retention-days: 14
+
+  full:
+    needs: preview
+    # Weekly, or by hand with the tier set to full. A failed preview tier skips the paid build.
+    if: >-
+      !cancelled() && needs.preview.result != 'failure' &&
+      (github.event_name == 'schedule' || inputs.tier == 'full')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - name: Confirm
         env:
+          EVENT: ${{ github.event_name }}
           CONFIRM: ${{ inputs.confirm }}
         run: |
-          if [ "$CONFIRM" != "spend" ]; then
-            echo 'Type "spend" in the confirm input to run.' >&2
+          if [ "$EVENT" != "schedule" ] && [ "$CONFIRM" != "spend" ]; then
+            echo 'Type "spend" in the confirm input to run the full tier.' >&2
             exit 1
           fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,15 +91,38 @@ jobs:
           bun-version: 1.4.2
       - run: bun install --frozen-lockfile
       - name: Render and check
+        id: render
         env:
           EASYRENDER_API_KEY: ${{ secrets.EASYRENDER_API_KEY }}
           ONLY: ${{ inputs.only }}
         run: |
-          if [ -n "$ONLY" ]; then
-            bun src/cli.ts run --spend "--only=$ONLY"
-          else
-            bun src/cli.ts run --spend
+          if [ -z "$EASYRENDER_API_KEY" ]; then
+            echo 'Repository secret EASYRENDER_API_KEY is not set.' >&2
+            exit 1
           fi
+          if [ -n "$ONLY" ]; then
+            bun src/cli.ts run --spend "--only=$ONLY" | tee run.log
+          else
+            bun src/cli.ts run --spend | tee run.log
+          fi
+          echo "id=$(grep -oE 'run-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}' run.log | head -1)" >> "$GITHUB_OUTPUT"
+      # Judged criteria (shape, material, finish) need a person only when something moved: a check
+      # failed, a model changed, or a check fell below the last published run. This step fails the
+      # job in that case, so the weekly run turns red exactly when a human look is due.
+      - name: Does a person need to review this run?
+        env:
+          RUN_ID: ${{ steps.render.outputs.id }}
+        run: |
+          set +e
+          bun src/cli.ts compare "$RUN_ID" | tee compare.log
+          code=${PIPESTATUS[0]}
+          {
+            echo "### Eval run $RUN_ID"
+            cat compare.log
+            echo
+            echo 'Download the eval-run artifact, fill in review.json, then bun run publish-run.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$code"
       # Sheets, GLBs, photos and review.json of the run. Download it, fill in review.json, then
       # `bun run publish-run <run id>` after copying the folder to runs/.
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

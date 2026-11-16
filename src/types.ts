@@ -47,7 +47,8 @@ export type CheckResult = {
 export type PhotoOutcome = {
   slug: string;
   renderId: string | null;
-  status: 'ready' | 'failed' | 'timeout' | 'error';
+  /** `preview` is a preview-tier outcome: the free sheet was checked and nothing was built. */
+  status: 'ready' | 'preview' | 'failed' | 'timeout' | 'error';
   creditsSpent: number | null;
   /** Shorter side of the sheet that was checked, in pixels: tells a 1K draft from a 2K redraw. */
   sheetSide?: number;
@@ -61,6 +62,8 @@ export type RunManifest = {
   baseUrl: string;
   sheetModel: string;
   buildModel: string;
+  /** `preview` runs only draw the free sheet and check the views; no build, no credits. Default full. */
+  tier?: 'preview' | 'full';
   outcomes: PhotoOutcome[];
 };
 
