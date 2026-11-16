@@ -9,13 +9,17 @@
     "score": "bun src/cli.ts score",
     "publish-run": "bun src/cli.ts publish",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "agent-evals": "bun agent/run.ts",
+    "compare": "bun src/cli.ts compare"
   },
   "dependencies": {
     "sharp": "0.35.5"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@types/bun": "1.4.4",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "zod": "4.6.7"
   }
 }

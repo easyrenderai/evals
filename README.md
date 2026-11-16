@@ -18,24 +18,39 @@ Every photo in the golden set is scored on five criteria:
 
 ## Running
 
-Runs are **manual only**. A run renders every photo in 3D on the easyrender account behind the API key, so it costs that account 64 credits per photo (about $0.64 each, 384 credits for the six photos; the provider cost to easyrender is lower). Nothing runs on push or on a schedule.
+There are two tiers, because only one of them costs credits.
+
+| Tier | What it does | Cost | Checks |
+| --- | --- | --- | --- |
+| preview | Creates each render, waits for the free draft sheet, stops. | No credits. Provider cost about $0.03 per photo. | `views` |
+| full | Pays for the 3D build and downloads the sheet and GLB. | 64 credits per photo (384 for the six; provider cost about $0.19 each). | `views`, `file`, then a person judges `shape`, `material`, `finish` |
+
+**Schedule.** The Eval run workflow runs both tiers every Monday at 05:23 UTC (preview first; a failed preview skips the build), and by hand from Actions, Run workflow (choose `tier`; `full` needs the word `spend`). Nothing runs on push, and nothing runs when the harness, a skill or a model changes: that would spend credits on every change. After such a change, dispatch the full tier once. At six photos a week the full tier is about $5 a month of provider cost and the preview tier under $1.
+
+The workflow needs the repository secret `EASYRENDER_API_KEY` (an API key with the spend scope for a dedicated eval account) and fails with a clear message when it is missing. The run stops before building if the account cannot pay for every photo or if the API quotes a different price than the suite expects.
+
+**Review only when something moved.** After the full tier, `compare` checks the automatic results against the last published run. The job fails, and the run summary says why, when a render did not finish, a check failed or fell, a model changed, or there is no published run yet. When the job is green, the judged criteria do not need a person that week. When it is red, download the `eval-run` artifact and review (below).
 
 ```bash
 bun install
-EASYRENDER_API_KEY=er_... bun run run-evals --spend            # every photo
-EASYRENDER_API_KEY=er_... bun run run-evals --spend --only=vase  # a subset
+EASYRENDER_API_KEY=er_... bun run run-evals --preview             # free tier, every photo
+EASYRENDER_API_KEY=er_... bun run run-evals --spend               # full tier, every photo
+EASYRENDER_API_KEY=er_... bun run run-evals --spend --only=vase   # a subset
+bun run compare <run id>                                          # does this run need a person?
 ```
 
-Or use the **Eval run** workflow (Actions, Run workflow), which needs a repository secret `EASYRENDER_API_KEY` and the word `spend` typed as confirmation. The run stops before building if the account cannot pay for every photo or if the API quotes a different price than the suite expects.
+Per photo the runner creates a render through the public REST API, hides it from the public gallery, waits for the angle sheet, (full tier) pays for the 3D build, downloads the sheet and the GLB, and runs the automatic checks. A paid build redraws the sheet at 2K with a second model, and falls back to the 1K draft if the redraw fails, so each outcome records the side of the sheet it was checked on:
 
-Per photo the runner creates a render through the public REST API, hides it from the public gallery, waits for the angle sheet, pays for the 3D build, downloads the sheet and the GLB, and runs the two automatic checks. A paid build redraws the sheet at 2K with a second model, and falls back to the 1K draft if the redraw fails, so each outcome records the side of the sheet it was checked on:
-
-- `views`: the nine cells of the sheet are all filled and none of the eight turnaround views repeats another (the same test as the product's own guardrail, but strict: the guardrail tolerates three repeats, a score does not).
+- `views`: the nine cells of the sheet are all filled and none of the eight turnaround views repeats another (the same test as the product's own guardrail, but strict: the guardrail tolerates three repeats, a score does not). The preview tier checks the 1K draft.
 - `file`: the GLB is a complete binary glTF 2 with at least one mesh.
 
-A render that fails or times out fails every criterion, because that is what a customer got.
+A render that fails or times out fails every criterion, because that is what a customer got. A preview run builds nothing, so it is never scored or published.
 
-Everything lands in `runs/<id>/` (photo, `sheet.png`, `model.glb` per photo, `manifest.json`, and a `review.json` to fill in). Those files are derived from third-party photos and are never committed.
+Everything lands in `runs/<id>/` (photo, `sheet.png`, `model.glb` per photo, `manifest.json`, and for the full tier a `review.json` to fill in). Those files are derived from third-party photos and are never committed.
+
+## Agent evals
+
+The suite above checks what the product renders. `agent/` checks what an AI agent does with the easyrender MCP server and its skill: whether it shows the preview and the cost first, stays inside the budget, resumes by render id and never builds or redraws without approval. It uses a stub MCP server, so it costs no credits, and a headless `claude -p` on a Claude subscription, so it has no API bill. See [agent/README.md](agent/README.md).
 
 ## Review
 

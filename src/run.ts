@@ -38,6 +38,7 @@ async function runPhoto(
   root: string,
   dir: string,
   photo: Photo,
+  tier: 'preview' | 'full',
 ): Promise<PhotoOutcome> {
   const outcome = (partial: Partial<PhotoOutcome> & Pick<PhotoOutcome, 'status'>): PhotoOutcome => ({
     slug: photo.slug,
@@ -64,6 +65,20 @@ async function runPhoto(
     const preview = await waitFor(client, renderId, (s) => s === 'preview_ready');
     if (preview === 'timeout') return outcome({ renderId, status: 'timeout' });
     if (preview.status === 'failed') return outcome({ renderId, status: 'failed' });
+
+    if (tier === 'preview') {
+      // The free draft sheet: 1K, no credits. Only the views check can run on it.
+      const draft = await client.sheet(renderId);
+      await writeFile(join(dir, photo.slug, 'sheet.png'), draft);
+      const { width = 0, height = 0 } = await sharp(draft).metadata();
+      return outcome({
+        renderId,
+        status: 'preview',
+        creditsSpent: 0,
+        sheetSide: Math.min(width, height),
+        checks: { views: await checkViews(draft), file: null },
+      });
+    }
 
     await client.build(renderId);
     const built = await waitFor(client, renderId, (s) => s === 'ready');
@@ -98,10 +113,18 @@ export type RunOptions = {
   client: Client;
   baseUrl: string;
   photos: Photo[];
+  /** `preview` stops before the paid build. Default `full`. */
+  tier?: 'preview' | 'full';
 };
 
 /** Renders every photo through the live product and writes runs/<id>/ for review. Spends credits. */
-export async function runEvals({ root, client, baseUrl, photos }: RunOptions): Promise<RunManifest> {
+export async function runEvals({
+  root,
+  client,
+  baseUrl,
+  photos,
+  tier = 'full',
+}: RunOptions): Promise<RunManifest> {
   const stamp = new Date().toISOString();
   const id = `run-${stamp.slice(0, 10)}-${stamp.slice(11, 16).replace(':', '')}`;
   const dir = join(root, 'runs', id);
@@ -114,7 +137,7 @@ export async function runEvals({ root, client, baseUrl, photos }: RunOptions): P
       while (next < photos.length) {
         const index = next++;
         const photo = photos[index] as Photo;
-        outcomes[index] = await runPhoto(client, root, dir, photo);
+        outcomes[index] = await runPhoto(client, root, dir, photo, tier);
         console.log(`${photo.slug}: ${outcomes[index]?.status}`);
       }
     }),
@@ -126,9 +149,12 @@ export async function runEvals({ root, client, baseUrl, photos }: RunOptions): P
     baseUrl,
     sheetModel: SHEET_MODEL,
     buildModel: BUILD_MODEL,
+    tier,
     outcomes,
   };
   await writeFile(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+
+  if (tier === 'preview') return manifest;
 
   // The reviewer fills this in against photo.jpg, sheet.png and model.glb of each photo.
   const review: Review = Object.fromEntries(

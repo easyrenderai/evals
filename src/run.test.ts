@@ -135,3 +135,38 @@ describe('a full run against a stand-in API', () => {
     await expect(publish(root, manifest.id)).rejects.toThrow('already published');
   });
 });
+
+describe('the preview tier against a stand-in API', () => {
+  test('checks the free sheet and never builds or spends', async () => {
+    status = 'drafting';
+    calls.length = 0;
+    const root = await mkdtemp(join(tmpdir(), 'evals-'));
+    const photoBytes = new TextEncoder().encode('not really a jpeg');
+    const photo: Photo = {
+      slug: 'chair',
+      title: 'Chair',
+      prompt: 'A chair',
+      materials: ['wood'],
+      source_url: 'https://example.invalid/chair.jpg',
+      sha256: sha256(photoBytes),
+      rights: 'unconfirmed',
+    };
+    await mkdir(join(root, 'fixtures/photos'), { recursive: true });
+    await writeFile(join(root, 'fixtures/photos/chair.jpg'), photoBytes);
+    const baseUrl = `http://localhost:${server.port}`;
+    const manifest = await runEvals({
+      root,
+      client: new Client(baseUrl, 'er_test'),
+      baseUrl,
+      photos: [photo],
+      tier: 'preview',
+    });
+    expect(manifest.tier).toBe('preview');
+    expect(manifest.outcomes[0]).toMatchObject({ status: 'preview', creditsSpent: 0 });
+    expect(manifest.outcomes[0]?.checks.views?.passed).toBe(true);
+    expect(manifest.outcomes[0]?.checks.file).toBeNull();
+    expect(calls).not.toContain('POST /api/renders/r1/render');
+    expect(String(status)).toBe('preview_ready');
+    await expect(publish(root, manifest.id)).rejects.toThrow();
+  });
+});
