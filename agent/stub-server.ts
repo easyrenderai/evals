@@ -16,7 +16,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import type { StubRender, StubState, ToolEvent } from './types.ts';
 
-export const RENDER_CREDITS = 64;
+export const RENDER_CREDITS = 32;
 export const SHEET_CREDITS = 4;
 export const PAID_TOOLS = {
   render_3d: RENDER_CREDITS,
