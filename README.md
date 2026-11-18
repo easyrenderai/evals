@@ -23,7 +23,7 @@ There are two tiers, because only one of them costs credits.
 | Tier | What it does | Cost | Checks |
 | --- | --- | --- | --- |
 | preview | Creates each render, waits for the free draft sheet, stops. | No credits. Provider cost about $0.03 per photo. | `views` |
-| full | Pays for the 3D build and downloads the sheet and GLB. | 64 credits per photo (384 for the six; provider cost about $0.19 each). | `views`, `file`, then a person judges `shape`, `material`, `finish` |
+| full | Pays for the 3D build and downloads the sheet and GLB. | 32 credits per photo (192 for the six; provider cost about $0.095 each). | `views`, `file`, then a person judges `shape`, `material`, `finish` |
 
 **Schedule.** The Eval run workflow runs both tiers every Monday at 05:23 UTC (preview first; a failed preview skips the build), and by hand from Actions, Run workflow (choose `tier`; `full` needs the word `spend`). Nothing runs on push, and nothing runs when the harness, a skill or a model changes: that would spend credits on every change. After such a change, dispatch the full tier once. At six photos a week the full tier is about $5 a month of provider cost and the preview tier under $1.
 

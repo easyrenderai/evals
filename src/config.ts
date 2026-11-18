@@ -17,4 +17,4 @@ export const CONCURRENCY = 3;
 
 // What a full 3D render costs, as the pricing on /models and /credits says. A run stops before it
 // spends anything if the API quotes a different price, so a price change is noticed, not absorbed.
-export const RENDER_CREDITS = Number(process.env.EVAL_RENDER_CREDITS ?? 64);
+export const RENDER_CREDITS = Number(process.env.EVAL_RENDER_CREDITS ?? 32);

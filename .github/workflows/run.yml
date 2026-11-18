@@ -2,8 +2,8 @@ name: Eval run
 
 # Real renders against the live product, in two tiers.
 #   preview: the free draft sheet and the views check. No build, no credits.
-#   full:    the paid 3D build and the file check. 64 credits per photo on the account behind
-#            EASYRENDER_API_KEY (about $0.19 of provider cost each).
+#   full:    the paid 3D build and the file check. 32 credits per photo on the account behind
+#            EASYRENDER_API_KEY (about $0.095 of provider cost each).
 # They run once a week (Monday), and by hand with workflow_dispatch. Nothing runs on push, and
 # nothing runs when the harness, the skills or a model changes: that would spend credits on every
 # change. After such a change, dispatch the full tier yourself.
