@@ -20,12 +20,12 @@
       "rights": "unconfirmed"
     },
     {
-      "slug": "vase",
-      "title": "Stoneware vase",
-      "prompt": "Matte stoneware vase",
-      "materials": ["ceramic"],
-      "source_url": "https://easyrender.ai/showcase/vase.jpg",
-      "sha256": "98c00a7d3c97f943e72abf0fb8668c0ad7696bede4096ff4b22c32b21ee62bdc",
+      "slug": "table",
+      "title": "Extending dining table",
+      "prompt": "Oak-effect extending dining table",
+      "materials": ["wood"],
+      "source_url": "https://easyrender.ai/showcase/table.jpg",
+      "sha256": "8d97275529a018dee200b31de811a607c3119298821ab3e01a9a5bed48f1de32",
       "rights": "unconfirmed"
     },
     {

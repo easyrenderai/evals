@@ -35,7 +35,7 @@ The workflow needs the repository secret `EASYRENDER_API_KEY` (an API key with t
 bun install
 EASYRENDER_API_KEY=er_... bun run run-evals --preview             # free tier, every photo
 EASYRENDER_API_KEY=er_... bun run run-evals --spend               # full tier, every photo
-EASYRENDER_API_KEY=er_... bun run run-evals --spend --only=vase   # a subset
+EASYRENDER_API_KEY=er_... bun run run-evals --spend --only=table   # a subset
 bun run compare <run id>                                          # does this run need a person?
 ```
 
@@ -69,7 +69,7 @@ Each run is appended to [`results/latest.json`](results/latest.json). The easyre
 
 ## Fixtures
 
-`fixtures/manifest.json` lists the golden set: six product photos that easyrender.ai already shows on its own site (swivel chair, coffee table, two vases, armchair, bedside table). The photos are **not** stored here. Each is fetched from its `source_url` and checked against its `sha256`. Their `rights` are `unconfirmed`. The set has no stone or marble piece and no tubular-metal piece, so the material-realism rules for stone and metal tube are not exercised yet; add those photos before reading too much into the `material` score.
+`fixtures/manifest.json` lists the golden set: six product photos that easyrender.ai already shows on its own site (swivel chair, round coffee table, dining table, armchair, clay vase, bedside table). The photos are **not** stored here. Each is fetched from its `source_url` and checked against its `sha256`. Their `rights` are `unconfirmed`. The `views` check expects distinct angles, so it is not meaningful for round or rotationally symmetric objects (a plain cylinder vase draws near-identical views; the product handles round products separately). Keep the set to pieces with a visible front, side and back. The set has no stone or marble piece and no tubular-metal piece, so the material-realism rules for stone and metal tube are not exercised yet; add those photos before reading too much into the `material` score.
 
 ## License
 
