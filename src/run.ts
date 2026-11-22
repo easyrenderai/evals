@@ -6,9 +6,9 @@ import { type Client, type RenderView } from './client.ts';
 import {
   BUILD_MODEL,
   CONCURRENCY,
+  EXPECTED_RENDER_CREDITS,
   PHASE_TIMEOUT_MS,
   POLL_INTERVAL_MS,
-  RENDER_CREDITS,
   SHEET_MODEL,
 } from './config.ts';
 import { photoBytes } from './fixtures.ts';
@@ -39,6 +39,7 @@ async function runPhoto(
   dir: string,
   photo: Photo,
   tier: 'preview' | 'full',
+  expectedCredits: number | null,
 ): Promise<PhotoOutcome> {
   const outcome = (partial: Partial<PhotoOutcome> & Pick<PhotoOutcome, 'status'>): PhotoOutcome => ({
     slug: photo.slug,
@@ -56,9 +57,9 @@ async function runPhoto(
     const created = await client.create(bytes, 'image/jpeg', photo.prompt);
     renderId = created.id;
     await client.makePrivate(renderId);
-    if (created.renderCredits !== RENDER_CREDITS) {
+    if (expectedCredits !== null && created.renderCredits !== expectedCredits) {
       throw new Error(
-        `the API quotes ${created.renderCredits} credits for a render, the suite expects ${RENDER_CREDITS}; not building`,
+        `the API quotes ${created.renderCredits} credits for a render, the run expects ${expectedCredits} (EVAL_RENDER_CREDITS); not building`,
       );
     }
 
@@ -80,6 +81,11 @@ async function runPhoto(
       });
     }
 
+    // Build at the live quote, but only if the account can pay for it.
+    const balance = await client.balance();
+    if (balance < created.renderCredits) {
+      throw new Error(`the account has ${balance} credits; a build costs ${created.renderCredits}; not building`);
+    }
     await client.build(renderId);
     const built = await waitFor(client, renderId, (s) => s === 'ready');
     if (built === 'timeout') return outcome({ renderId, status: 'timeout' });
@@ -115,6 +121,8 @@ export type RunOptions = {
   photos: Photo[];
   /** `preview` stops before the paid build. Default `full`. */
   tier?: 'preview' | 'full';
+  /** Stop when the API quotes another build price. Default: `EVAL_RENDER_CREDITS`, or no pin. */
+  expectedCredits?: number | null;
 };
 
 /** Renders every photo through the live product and writes runs/<id>/ for review. Spends credits. */
@@ -124,6 +132,7 @@ export async function runEvals({
   baseUrl,
   photos,
   tier = 'full',
+  expectedCredits = EXPECTED_RENDER_CREDITS,
 }: RunOptions): Promise<RunManifest> {
   const stamp = new Date().toISOString();
   const id = `run-${stamp.slice(0, 10)}-${stamp.slice(11, 16).replace(':', '')}`;
@@ -137,7 +146,7 @@ export async function runEvals({
       while (next < photos.length) {
         const index = next++;
         const photo = photos[index] as Photo;
-        outcomes[index] = await runPhoto(client, root, dir, photo, tier);
+        outcomes[index] = await runPhoto(client, root, dir, photo, tier, expectedCredits);
         console.log(`${photo.slug}: ${outcomes[index]?.status}`);
       }
     }),

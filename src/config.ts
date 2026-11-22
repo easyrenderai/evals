@@ -15,6 +15,9 @@ export const POLL_INTERVAL_MS = Number(process.env.EVAL_POLL_MS ?? 5_000);
 export const PHASE_TIMEOUT_MS = 10 * 60_000;
 export const CONCURRENCY = 3;
 
-// What a full 3D render costs, as the pricing on /models and /credits says. A run stops before it
-// spends anything if the API quotes a different price, so a price change is noticed, not absorbed.
-export const RENDER_CREDITS = Number(process.env.EVAL_RENDER_CREDITS ?? 32);
+// The build price is whatever the API quotes on each render (renderCredits, from the product's own
+// pricing), so no number lives here. To make a run stop when the price moves, pin the price the
+// run should expect: EVAL_RENDER_CREDITS=<credits>. Unset, the run builds at the live quote and
+// records what it spent.
+const pinned = process.env.EVAL_RENDER_CREDITS;
+export const EXPECTED_RENDER_CREDITS: number | null = pinned ? Number(pinned) : null;

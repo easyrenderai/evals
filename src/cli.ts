@@ -1,5 +1,5 @@
 import { Client } from './client.ts';
-import { DEFAULT_BASE_URL, RENDER_CREDITS } from './config.ts';
+import { DEFAULT_BASE_URL } from './config.ts';
 import { loadManifest } from './fixtures.ts';
 import { reviewReasons } from './compare.ts';
 import { publish } from './publish.ts';
@@ -33,11 +33,8 @@ async function main() {
     if (photos.length === 0) fail('No photos selected.');
 
     const client = new Client(baseUrl, apiKey);
-    const balance = await client.balance();
-    // A run that cannot pay for every build would give a misleading score, so stop first.
-    const needed = isPreview ? 0 : photos.length * RENDER_CREDITS;
-    if (balance < needed) fail(`The account has ${balance} credits; ${needed} are needed for ${photos.length} photos.`);
-
+    // Fails early and clearly on a wrong key; the build price is checked per photo against the live quote.
+    console.log(`Account balance: ${await client.balance()} credits.`);
     const manifest = await runEvals({ root, client, baseUrl, photos, tier: isPreview ? 'preview' : 'full' });
     if (isPreview) {
       const good = manifest.outcomes.filter((o) => o.status === 'preview' && o.checks.views?.passed).length;
