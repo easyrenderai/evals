@@ -53,6 +53,10 @@ function fakeGlb(): Uint8Array {
 let server: ReturnType<typeof Bun.serve>;
 const calls: string[] = [];
 let status: 'drafting' | 'preview_ready' | 'rendering' | 'ready' = 'drafting';
+// What the stand-in API quotes for a build and holds in the account. The suite carries no price of
+// its own, so any quote works; tests change these to cover a price move and a short balance.
+let quote = 41;
+let balance = 500;
 
 beforeAll(async () => {
   const sheet = await fakeSheet();
@@ -65,8 +69,8 @@ beforeAll(async () => {
       if (request.headers.get('authorization') !== 'Bearer er_test') {
         return new Response('no', { status: 401 });
       }
-      const view = () => Response.json({ id: 'r1', status, credits: status === 'ready' ? 32 : 0, renderCredits: 32 });
-      if (pathname === '/api/renders' && request.method === 'GET') return Response.json({ renders: [], balance: 500 });
+      const view = () => Response.json({ id: 'r1', status, credits: status === 'ready' ? quote : 0, renderCredits: quote });
+      if (pathname === '/api/renders' && request.method === 'GET') return Response.json({ renders: [], balance });
       if (pathname === '/api/renders' && request.method === 'POST') return view();
       if (pathname === '/api/renders/r1' && request.method === 'PATCH') return view();
       if (pathname === '/api/renders/r1') {
@@ -108,7 +112,7 @@ describe('a full run against a stand-in API', () => {
     const baseUrl = `http://localhost:${server.port}`;
     const manifest = await runEvals({ root, client: new Client(baseUrl, 'er_test'), baseUrl, photos: [photo] });
 
-    expect(manifest.outcomes[0]).toMatchObject({ slug: 'chair', status: 'ready', creditsSpent: 32, sheetSide: 600 });
+    expect(manifest.outcomes[0]).toMatchObject({ slug: 'chair', status: 'ready', creditsSpent: quote, sheetSide: 600 });
     expect(manifest.outcomes[0]?.checks.views?.passed).toBe(true);
     expect(manifest.outcomes[0]?.checks.file?.passed).toBe(true);
     // The eval render is hidden from the public gallery before anything is built.
@@ -168,5 +172,63 @@ describe('the preview tier against a stand-in API', () => {
     expect(calls).not.toContain('POST /api/renders/r1/render');
     expect(String(status)).toBe('preview_ready');
     await expect(publish(root, manifest.id)).rejects.toThrow();
+  });
+});
+
+describe('the build price', () => {
+  async function setup() {
+    status = 'drafting';
+    calls.length = 0;
+    const root = await mkdtemp(join(tmpdir(), 'evals-'));
+    const photoBytes = new TextEncoder().encode('not really a jpeg');
+    const photo: Photo = {
+      slug: 'chair',
+      title: 'Chair',
+      prompt: 'A chair',
+      materials: ['wood'],
+      source_url: 'https://example.invalid/chair.jpg',
+      sha256: sha256(photoBytes),
+      rights: 'unconfirmed',
+    };
+    await mkdir(join(root, 'fixtures/photos'), { recursive: true });
+    await writeFile(join(root, 'fixtures/photos/chair.jpg'), photoBytes);
+    const baseUrl = `http://localhost:${server.port}`;
+    return { root, photo, baseUrl, client: new Client(baseUrl, 'er_test') };
+  }
+
+  test('the preview tier needs no price at all', async () => {
+    const { root, photo, baseUrl, client } = await setup();
+    quote = 99;
+    const manifest = await runEvals({ root, client, baseUrl, photos: [photo], tier: 'preview', expectedCredits: null });
+    quote = 41;
+    expect(manifest.outcomes[0]).toMatchObject({ status: 'preview', creditsSpent: 0 });
+  });
+
+  test('a pinned price that the API no longer quotes stops the run before building', async () => {
+    const { root, photo, baseUrl, client } = await setup();
+    quote = 99;
+    const manifest = await runEvals({ root, client, baseUrl, photos: [photo], expectedCredits: 41 });
+    quote = 41;
+    expect(manifest.outcomes[0]).toMatchObject({ status: 'error', creditsSpent: null });
+    expect(manifest.outcomes[0]?.error).toContain('quotes 99 credits');
+    expect(calls).not.toContain('POST /api/renders/r1/render');
+  });
+
+  test('without a pin the run builds at whatever the API quotes', async () => {
+    const { root, photo, baseUrl, client } = await setup();
+    quote = 99;
+    const manifest = await runEvals({ root, client, baseUrl, photos: [photo], expectedCredits: null });
+    quote = 41;
+    expect(manifest.outcomes[0]).toMatchObject({ status: 'ready', creditsSpent: 99 });
+  });
+
+  test('an account that cannot pay the quote is not built for', async () => {
+    const { root, photo, baseUrl, client } = await setup();
+    balance = 10;
+    const manifest = await runEvals({ root, client, baseUrl, photos: [photo], expectedCredits: null });
+    balance = 500;
+    expect(manifest.outcomes[0]).toMatchObject({ status: 'error', creditsSpent: null });
+    expect(manifest.outcomes[0]?.error).toContain('has 10 credits');
+    expect(calls).not.toContain('POST /api/renders/r1/render');
   });
 });

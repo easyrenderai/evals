@@ -6,7 +6,7 @@ const ok = (slug: string): PhotoOutcome => ({
   slug,
   renderId: slug,
   status: 'ready',
-  creditsSpent: 32,
+  creditsSpent: 41,
   checks: {
     views: { passed: true, emptyCells: 0, repeatedViews: 0, minDistance: 1 },
     file: { passed: true, reason: 'ok' },
